@@ -1,0 +1,489 @@
+-----mainwindow.h----
+
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
+private slots:
+    void on_pushButton_clicked();
+
+    void on_pushButton_3_clicked();
+
+    void on_pushButton_2_clicked();
+
+private:
+    Ui::MainWindow *ui;
+};
+#endif // MAINWINDOW_H
+
+---pro---
+
+QT       += core gui sql
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+CONFIG += c++17
+
+# You can make your code fail to compile if it uses deprecated APIs.
+# In order to do so, uncomment the following line.
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+
+SOURCES += \
+    main.cpp \
+    mainwindow.cpp
+
+HEADERS += \
+    mainwindow.h
+
+FORMS += \
+    mainwindow.ui
+
+# Default rules for deployment.
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android: target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+
+---main.cpp---
+
+#include "mainwindow.h"
+
+#include <QApplication>
+
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
+    MainWindow w;
+    w.show();
+    return a.exec();
+}
+
+---mainwindow.cpp---
+
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include <QMessageBox>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
+    db.setHostName("localhost");
+    db.setDatabaseName("EmployeeManagement");
+    db.setUserName("kalana");
+    db.setPassword("11223344");
+
+    if (db.open()) {
+        QMessageBox::information(this, "Success", "Database connection successful: " + db.lastError().text());
+    } else {
+        QMessageBox::critical(this, "Error", "Database connection failed: " + db.lastError().text());
+    }
+}
+
+
+void MainWindow::on_pushButton_3_clicked()
+{
+    int id = ui->SEmpID->text().toInt();
+    QString Name = ui->SEmpName->text();
+    int Age = ui->SEmpAge->text().toInt();
+    QString Address = ui->SEmpAddress->text();
+    int Contact = ui->lineEdit->text().toInt();
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
+    db.setHostName("localhost");
+    db.setDatabaseName("EmployeeManagement");
+    db.setUserName("kalana");
+    db.setPassword("11223344");
+
+    if (!db.open()) {
+        qDebug() << "Database connection failed: " << db.lastError().text();
+        return;
+    }
+
+
+    QSqlQuery query(db);
+
+
+    query.exec("CREATE TABLE IF NOT EXISTS Details ("
+               "id INT PRIMARY KEY,"
+               "name VARCHAR(50) NOT NULL,"
+               "age INT,"
+               "qualifications VARCHAR(50),"
+               "contact INT"
+               ")");
+
+    query.prepare("INSERT INTO Data (EmployeeId, EmployeeName, EmployeeAge, EmployeeAddress, EmployeeContact) "
+                  "VALUES (:EmployeeId, :EmployeeName, :EmployeeAge, :EmployeeAddress, :EmployeeContact)");
+
+
+    query.bindValue(":EmployeeId", id);
+    query.bindValue(":EmployeeName", Name);
+    query.bindValue(":EmployeeAge", Age);
+    query.bindValue(":EmployeeAddress", Address);
+    query.bindValue(":EmployeeContact", Contact);
+
+    if (query.exec()) {
+
+        qDebug() << "Record added to database.";
+    } else {
+
+        qDebug() << "Error adding record to database:" << query.lastError().text();
+    }
+
+    db.close();
+}
+
+
+void MainWindow::on_pushButton_2_clicked()
+{
+
+    int id = ui->lineEdit_11->text().toInt();
+
+    QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
+    db.setHostName("localhost");
+    db.setDatabaseName("EmployeeManagement");
+    db.setUserName("kalana");
+    db.setPassword("11223344");
+
+    if (!db.open()) {
+        qDebug() << "Database connection failed: " << db.lastError().text();
+        return;
+    }
+
+    QSqlQuery query(db);
+    query.prepare("SELECT EmployeeId, EmployeeName, EmployeeAge, EmployeeAddress, EmployeeContact FROM Data WHERE EmployeeId = :id");
+    query.bindValue(":id", id);
+
+    if (query.exec()) {
+        if (query.next()) {
+
+            QString employeeName = query.value("EmployeeName").toString();
+            int employeeAge = query.value("EmployeeAge").toInt();
+            QString employeeAddress = query.value("EmployeeAddress").toString();
+            int employeeContact = query.value("EmployeeContact").toInt();
+
+
+            ui->EmpNameOut->setText(employeeName);
+            ui->EmpAgeOut->setText(QString::number(employeeAge));
+            ui->EmpAddressout->setText(employeeAddress);
+            ui->EmpContactOut->setText(QString::number(employeeContact));
+
+            qDebug() << "Values retrieved successfully.";
+        } else {
+            qDebug() << "No record found for ID" << id;
+        }
+    } else {
+        qDebug() << "Error executing query:" << query.lastError().text();
+    }
+
+    db.close();
+}
+
+
+---mainwindow.h
+
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
+
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
+private slots:
+    void on_pushButton_clicked();
+
+    void on_pushButton_3_clicked();
+
+    void on_pushButton_2_clicked();
+
+private:
+    Ui::MainWindow *ui;
+};
+#endif // MAINWINDOW_H
+
+---ui---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1030</width>
+    <height>629</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="pushButton">
+    <property name="geometry">
+     <rect>
+      <x>820</x>
+      <y>20</y>
+      <width>191</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Check Database</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_2">
+    <property name="geometry">
+     <rect>
+      <x>740</x>
+      <y>250</y>
+      <width>161</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Get Data</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_3">
+    <property name="geometry">
+     <rect>
+      <x>740</x>
+      <y>160</y>
+      <width>161</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Set Data</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_14">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>220</y>
+      <width>169</width>
+      <height>33</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Contact</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_19">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>290</y>
+      <width>221</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Enter ID to Recieve data</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>230</y>
+      <width>409</width>
+      <height>25</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_11">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>290</y>
+      <width>361</width>
+      <height>31</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>250</x>
+      <y>10</y>
+      <width>411</width>
+      <height>211</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <widget class="QLineEdit" name="SEmpID"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="SEmpName"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="SEmpAge"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="SEmpAddress"/>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>210</x>
+      <y>350</y>
+      <width>411</width>
+      <height>201</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_6">
+     <item>
+      <widget class="QLineEdit" name="EmpNameOut"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="EmpAgeOut"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="EmpAddressout"/>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="EmpContactOut"/>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>20</y>
+      <width>171</width>
+      <height>191</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_7">
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>ID</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Age</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>Address</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>360</y>
+      <width>121</width>
+      <height>181</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_8">
+     <item>
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Age</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>Address</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>Contact</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1030</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+
